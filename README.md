@@ -56,4 +56,4 @@ Alex Sokolek, Version 1.0.0.1, Copyright (c) March 27, 2024
 
 Version 1.0.0.2 - April 1, 2024 - Added worker thread pool.
 
-Version 1.0.0.3 - April 14, 2024 - Updated version for release.
+Version 1.0.0.3 - April 17, 2024 - Updated version for release.
