@@ -13,8 +13,7 @@ processors, hence the choice of 12 threads. We can specify a
 somewhat arbitrary number of threads, and performance vs the
 number of threads is a little erratic, possibly due to latency
 and/or overhead in the OS. I am seeing a factor of 8 to 10
-improvement with 12 threads. Note that you must select to use
-only 1 thread if you want to debug the worker thread.
+improvement with 12 threads.
 
 The number of slices defaults to 5000. In the first version
 the number of slices and the number of threads was the same.
