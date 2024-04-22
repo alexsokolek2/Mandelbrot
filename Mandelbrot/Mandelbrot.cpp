@@ -63,6 +63,8 @@
 //
 // Version 1.0.0.4 - April 20, 2024 - Updated comments.
 //
+// Version 1.0.0.5 - April 21, 2024 - Limited mouse capture range.
+//
 
 #include "framework.h"
 #include "Mandelbrot.h"
@@ -827,16 +829,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		if (!LeftMouseButtonDown) break;
 		
-		// Get the (current) destination coordinates.
-		MouseDragDestination.x = GET_X_LPARAM(lParam);
-		MouseDragDestination.y = GET_Y_LPARAM(lParam);
-		
 		// Setup to draw.
 		HDC dc = GetDC(hWnd);
 		TEXTMETRIC tm;
 		GetTextMetrics(dc, &tm);
 		RECT rect;
 		GetClientRect(hWnd, &rect);
+
+		// Get the (current) destination coordinates.
+		MouseDragDestination.x = min(max(GET_X_LPARAM(lParam), rect.left), rect.right                - 1);
+		MouseDragDestination.y = min(max(GET_Y_LPARAM(lParam), rect.top ), rect.bottom - tm.tmHeight - 1);
 
 		// Swap out the current pen for a white pen, saving the current pen.
 		HPEN hPenNew = CreatePen(PS_SOLID, 1, RGB(255, 255, 255));
@@ -900,10 +902,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		LeftMouseButtonDown = false;
 		ReleaseCapture();
 
-		// Get the final destination coordinates.
-		MouseDragDestination.x = GET_X_LPARAM(lParam);
-		MouseDragDestination.y = GET_Y_LPARAM(lParam);
-
 		RECT rect;
 		GetClientRect(hWnd, &rect);
 
@@ -911,6 +909,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		TEXTMETRIC tm;
 		GetTextMetrics(dc, &tm);
 		ReleaseDC(hWnd, dc);
+
+		// Get the final destination coordinates.
+		MouseDragDestination.x = min(max(GET_X_LPARAM(lParam), rect.left), rect.right                - 1);
+		MouseDragDestination.y = min(max(GET_Y_LPARAM(lParam), rect.top ), rect.bottom - tm.tmHeight - 1);
 
 		// Calculate the coordinates of the box, correcting for flipping in either axis.
 		long lxMin = min(MouseDragOrigin.x, MouseDragDestination.x);

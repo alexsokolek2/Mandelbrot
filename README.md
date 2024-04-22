@@ -60,3 +60,5 @@ Version 1.0.0.2 - April 1, 2024 - Added worker thread pool.
 Version 1.0.0.3 - April 17, 2024 - Updated version for release.
 
 Version 1.0.0.4 - April 20, 2024 - Updated comments.
+
+Version 1.0.0.5 - April 21, 2024 - Limited mouse capture range.
