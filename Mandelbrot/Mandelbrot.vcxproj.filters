@@ -39,6 +39,45 @@
     <ClInclude Include="WorkQueue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ttmath.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ttmathbig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ttmathdec.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ttmathint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ttmathmisc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ttmathobjects.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ttmathparser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ttmaththreads.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ttmathtypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ttmathuint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ttmathuint_noasm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ttmathuint_x86.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ttmathuint_x86_64.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Mandelbrot.cpp">
@@ -69,5 +108,10 @@
     <Image Include="Mandelbrot.ico">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="ttmathuint_x86_64_msvc.asm">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>
