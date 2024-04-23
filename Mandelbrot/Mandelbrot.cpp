@@ -1,9 +1,5 @@
 // Mandelbrot.cpp : Defines the entry point for the application.
 //
-// This clone, MandelbrotTT, derived from Mandelbrot, is a test to
-// see if the ttmath extended precision arithmetic library makes
-// any kind of improvement in the graphics quality.
-// 
 // Draws the Mandelbrot set. Supports click to change orgin, drag
 // to zoom in, and mouse wheel zoom in and out about a point. The
 // user can hold the shift key down while dragging the window
