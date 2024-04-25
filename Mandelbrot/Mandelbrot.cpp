@@ -1335,92 +1335,160 @@ DWORD WINAPI MandelbrotWorkerThread(LPVOID lpParam)
 		double     dxMax;
 		double     dyMin;
 		double     dyMax;
-		uint32_t*  BitmapData;
+		uint32_t* BitmapData;
 		int        yMaxPixel;
 		int        xMaxPixel;
 		int        Iterations;
 		BOOL       bUseTTMath;
-	} THREADPROCPARAMETERS, *PTHREADPROCPARAMETERS;
+	} THREADPROCPARAMETERS, * PTHREADPROCPARAMETERS;
 	PTHREADPROCPARAMETERS P;
 	P = (PTHREADPROCPARAMETERS)lpParam;
 
 	// Loop until no more work to do.
-	for(;;)
+	for (;;)
 	{
 		// Retrieve the Work Queue slice
 		int StartPixel, EndPixel;                               // Work slice.
 		WaitForSingleObject(P->hcsMutex, INFINITE);             // Enter Critical Section.
-			BOOL bWorkToDo = wq->Dequeue(StartPixel, EndPixel);     // Retrieve slice.
+		BOOL bWorkToDo = wq->Dequeue(StartPixel, EndPixel);     // Retrieve slice.
 		ReleaseMutex(P->hcsMutex);                              // Leave Critical Section.
 		if (!bWorkToDo) return 0;                               // No more work to do.
 
 		// Algorithm: https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set.
 
-		double            x0,  y0,  x,  y,  x2,  y2; // for !bUseTTMath
-		ttmath::Big<1,4> xx0, yy0, xx, yy, xx2, yy2; // for  bUseTTMath
+		double             x0,  y0,  x,  y,  x2,  y2; // for the old FPU logic.
+		ttmath::Big<1, 4> xx0, yy0, xx, yy, xx2, yy2; // for the new TTMath library.
 
 		int iteration, Iterations = P->Iterations;
 
-		// Loop for each pixel in the slice.
-		for (int Pixel = StartPixel; Pixel < EndPixel; ++Pixel)
+		if (!P->bUseTTMath) // Case of using the old FPU logic.
 		{
-			// Calculate the x and y coordinates of the pixel.
-			int xPixel = Pixel % P->xMaxPixel;
-			int yPixel = Pixel / P->xMaxPixel;
-
-			// Calculate the real and imaginary coordinates of the point.
-			x0 = (P->dxMax - P->dxMin) / P->xMaxPixel * xPixel + P->dxMin;
-			y0 = (P->dyMax - P->dyMin) / P->yMaxPixel * yPixel + P->dyMin;
-
-			// Initial values.
-			x = 0.0;
-			y = 0.0;
-			x2 = 0.0;
-			y2 = 0.0;
-			iteration = 0;
-
-			// Main Mandelbrot algorithm. Determine the number of iterations
-			// that it takes each point to escape the distance of 2. The black
-			// areas of the image represent the points that never escape. This
-			// algorithm is described as the Optimized Escape Time algorithm
-			// in the WikiPedia article noted above.
-
-			while (x2 + y2 <= 4.0 && iteration < Iterations)
+			// Loop for each pixel in the slice.
+			for (int Pixel = StartPixel; Pixel < EndPixel; ++Pixel)
 			{
-				y = (x + x) * y + y0;
-				x = x2 - y2 + x0;
-				x2 = x * x;
-				y2 = y * y;
-				++iteration;
+				// Calculate the x and y coordinates of the pixel.
+				int xPixel = Pixel % P->xMaxPixel;
+				int yPixel = Pixel / P->xMaxPixel;
+
+				// Calculate the real and imaginary coordinates of the point.
+				x0 = (P->dxMax - P->dxMin) / P->xMaxPixel * xPixel + P->dxMin;
+				y0 = (P->dyMax - P->dyMin) / P->yMaxPixel * yPixel + P->dyMin;
+
+				// Initial values.
+				x = 0.0;
+				y = 0.0;
+				x2 = 0.0;
+				y2 = 0.0;
+				iteration = 0;
+
+				// Main Mandelbrot algorithm. Determine the number of iterations
+				// that it takes each point to escape the distance of 2. The black
+				// areas of the image represent the points that never escape. This
+				// algorithm is described as the Optimized Escape Time algorithm
+				// in the WikiPedia article noted above.
+
+				while (x2 + y2 <= 4.0 && iteration < Iterations)
+				{
+					y = (x + x) * y + y0;
+					x = x2 - y2 + x0;
+					x2 = x * x;
+					y2 = y * y;
+					++iteration;
+				}
+
+				// When we get here, we have a pixel and an iteration count.
+				// Lookup the color in the spectrum of all colors and set the
+				// pixel to that color. Note that we are only ever using 1000
+				// of the 16777216 possible colors. Changing Iterations uses
+				// a different pallette, but 1000 seems to be the best choice.
+				// Note also that this bitmap is shared by all the threads, but
+				// there is no concurrency conflict as each thread is assigned
+				// a different region of the bitmap. The user has the option of
+				// using the original RGB system or the new triple-Log HSV system.
+
+				if (bUseHSV)
+				{
+					// The new HSV system.
+					sRGB rgb;
+					sHSV hsv;
+					hsv = mandelbrotHSV(iteration, Iterations);
+					rgb = hsv2rgb(hsv);
+					P->BitmapData[Pixel] =
+						(((int)(rgb.r * 255 + 0.5))      ) +
+						(((int)(rgb.g * 255 + 0.5)) <<  8) +
+						(((int)(rgb.b * 255 + 0.5)) << 16);
+				}
+				else
+				{
+					// The old RGB system.
+					P->BitmapData[Pixel] = ReverseRGBBytes
+					((COLORREF)(-16777216.0 / Iterations * iteration + 16777216.0));
+				}
 			}
-
-			// When we get here, we have a pixel and an iteration count.
-			// Lookup the color in the spectrum of all colors and set the
-			// pixel to that color. Note that we are only ever using 1000
-			// of the 16777216 possible colors. Changing Iterations uses
-			// a different pallette, but 1000 seems to be the best choice.
-			// Note also that this bitmap is shared by all the threads, but
-			// there is no concurrency conflict as each thread is assigned
-			// a different region of the bitmap. The user has the option of
-			// using the original RGB system or the new triple-Log HSV system.
-
-			if (bUseHSV)
+		}
+		else // Case of using the new TTMath library
+		{
+			// Loop for each pixel in the slice.
+			for (int Pixel = StartPixel; Pixel < EndPixel; ++Pixel)
 			{
-				// The new HSV system.
-				sRGB rgb;
-				sHSV hsv;
-				hsv = mandelbrotHSV(iteration, Iterations);
-				rgb = hsv2rgb(hsv);
-				P->BitmapData[Pixel] =
-					(((int)(rgb.r * 255 + 0.5))      ) +
-					(((int)(rgb.g * 255 + 0.5)) <<  8) +
-					(((int)(rgb.b * 255 + 0.5)) << 16);
-			}
-			else
-			{
-				// The old RGB system.
-				P->BitmapData[Pixel] = ReverseRGBBytes
-				((COLORREF)(-16777216.0 / Iterations * iteration + 16777216.0));
+				// Calculate the x and y coordinates of the pixel.
+				int xPixel = Pixel % P->xMaxPixel;
+				int yPixel = Pixel / P->xMaxPixel;
+
+				// Calculate the real and imaginary coordinates of the point.
+				xx0 = (P->dxMax - P->dxMin) / P->xMaxPixel * xPixel + P->dxMin;
+				yy0 = (P->dyMax - P->dyMin) / P->yMaxPixel * yPixel + P->dyMin;
+
+				// Initial values.
+				xx = 0.0;
+				yy = 0.0;
+				xx2 = 0.0;
+				yy2 = 0.0;
+				iteration = 0;
+
+				// Main Mandelbrot algorithm. Determine the number of iterations
+				// that it takes each point to escape the distance of 2. The black
+				// areas of the image represent the points that never escape. This
+				// algorithm is described as the Optimized Escape Time algorithm
+				// in the WikiPedia article noted above.
+
+				while (xx2 + yy2 <= 4.0 && iteration < Iterations)
+				{
+					yy = (xx + xx) * yy + yy0;
+					xx = xx2 - yy2 + xx0;
+					xx2 = xx * xx;
+					yy2 = yy * yy;
+					++iteration;
+				}
+
+				// When we get here, we have a pixel and an iteration count.
+				// Lookup the color in the spectrum of all colors and set the
+				// pixel to that color. Note that we are only ever using 1000
+				// of the 16777216 possible colors. Changing Iterations uses
+				// a different pallette, but 1000 seems to be the best choice.
+				// Note also that this bitmap is shared by all the threads, but
+				// there is no concurrency conflict as each thread is assigned
+				// a different region of the bitmap. The user has the option of
+				// using the original RGB system or the new triple-Log HSV system.
+
+				if (bUseHSV)
+				{
+					// The new HSV system.
+					sRGB rgb;
+					sHSV hsv;
+					hsv = mandelbrotHSV(iteration, Iterations);
+					rgb = hsv2rgb(hsv);
+					P->BitmapData[Pixel] =
+						(((int)(rgb.r * 255 + 0.5))      ) +
+						(((int)(rgb.g * 255 + 0.5)) <<  8) +
+						(((int)(rgb.b * 255 + 0.5)) << 16);
+				}
+				else
+				{
+					// The old RGB system.
+					P->BitmapData[Pixel] = ReverseRGBBytes
+					((COLORREF)(-16777216.0 / Iterations * iteration + 16777216.0));
+				}
 			}
 		}
 	}
