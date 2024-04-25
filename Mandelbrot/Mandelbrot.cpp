@@ -394,7 +394,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (bReadOK) bReadOK = ReadFile(hFile, &ThreadsTemp,    sizeof(ThreadsTemp),    NULL, NULL);
 			if (bReadOK) bReadOK = ReadFile(hFile, &bShowAxesTemp,  sizeof(bShowAxesTemp),  NULL, NULL);
 			if (bReadOK) bReadOK = ReadFile(hFile, &bUseHSVTemp,    sizeof(bUseHSVTemp),    NULL, NULL);
-			if (bReadOK) bReadOK = ReadFile(hFile, &bUseTTMath,     sizeof(bUseTTMath),     NULL, NULL);
+			if (bReadOK) bReadOK = ReadFile(hFile, &bUseTTMathTemp, sizeof(bUseTTMathTemp), NULL, NULL);
 
 			CloseHandle(hFile);
 			delete[] pszOpenFileName;
@@ -596,7 +596,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			pThreadProcParameters[Thread]->yMaxPixel  = rect.bottom - tm.tmHeight; // Leave room for the status bar.
 			pThreadProcParameters[Thread]->xMaxPixel  = rect.right;
 			pThreadProcParameters[Thread]->Iterations = Iterations;
-			pThreadProcParameters[Thread]->bUseTTMath = true;
+			pThreadProcParameters[Thread]->bUseTTMath = bUseTTMath;
 
 			// Create and launch this thread, initially stalled waiting for the mutex.
 			phThreadArray[Thread] = CreateThread
