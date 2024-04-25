@@ -9,6 +9,12 @@
 // Also, saves and restores the WindowPlacement, in the registry,
 // between executions.
 //
+// The user has the option of selecting the old FPU logic, or the
+// new TTMath library from ttmath.org. This new library provides
+// extended precision floating point arithmetic (among other things)
+// and is used to see if the resolution of the graphics improves.
+// (It does not seem to improve things, but time will tell.)
+// 
 // Slices up the graphics workload between 12 threads. The machine
 // used for development and testing has 10 cores, and 12 logical
 // processors, hence the choice of 12 threads. We can specify a
@@ -65,7 +71,7 @@
 //
 // Version 1.0.0.5 - April 21, 2024 - Limited mouse capture range.
 //
-// Interim version - April 24, 2024 - TTMath Bignum library added.
+// Version 1.0.0.6 - April 25, 2024 - Added support for the TTMath library.
 //
 
 #include "framework.h"
@@ -1166,9 +1172,9 @@ INT_PTR CALLBACK Parameters(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			SetDlgItemText(hDlg, IDC_SLICES,     iTos(5000));
 			SetDlgItemText(hDlg, IDC_THREADS,    iTos(12));
 
-			CheckDlgButton(hDlg, IDC_SHOW_AXES, bShowAxes  ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hDlg, IDC_USEHSV,    bUseHSV    ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hDlg, IDC_USETTMATH, bUseTTMath ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hDlg, IDC_SHOW_AXES, false);
+			CheckDlgButton(hDlg, IDC_USEHSV,    true );
+			CheckDlgButton(hDlg, IDC_USETTMATH, false);
 
 			SendMessage(hDlg, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(hDlg, IDOK), true);
 

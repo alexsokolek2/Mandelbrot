@@ -7,6 +7,12 @@ Supports backtracking the axis coordinate range via right click.
 Also, saves and restores the WindowPlacement, in the registry,
 between executions.
 
+The user has the option of selecting the old FPU logic, or the
+new TTMath library from ttmath.org. This new library provides
+extended precision floating point arithmetic (among other things)
+and is used to see if the resolution of the graphics improves.
+(It does not seem to improve things, but time will tell.)
+
 Slices up the graphics workload between 12 threads. The machine
 used for development and testing has 10 cores, and 12 logical
 processors, hence the choice of 12 threads. We can specify a
@@ -62,3 +68,5 @@ Version 1.0.0.3 - April 17, 2024 - Updated version for release.
 Version 1.0.0.4 - April 20, 2024 - Updated comments.
 
 Version 1.0.0.5 - April 21, 2024 - Limited mouse capture range.
+
+Version 1.0.0.6 - April 25, 2024 - Added support for TTMath library.
