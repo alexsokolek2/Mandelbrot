@@ -604,7 +604,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		ReleaseMutex(hcsMutex);
 
 		// Wait for all threads to terminate.
-		WaitForMultipleObjects(Threads, phThreadArray, TRUE, INFINITE);
+		for (;;)
+		{
+			// Wait for up to one second.
+			if (WaitForMultipleObjects(Threads, phThreadArray, TRUE, 1000) == WAIT_OBJECT_0) break;
+			
+			// Flush the message queue.
+			MSG msg;
+			while (PeekMessage(&msg, hWnd, 0, 0, PM_REMOVE));
+		}
 
 		// Delete the critical section mutex
 		CloseHandle(hcsMutex);
