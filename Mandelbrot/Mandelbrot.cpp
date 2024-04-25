@@ -94,6 +94,8 @@ static int       Slices         = 5000;
 static int       Threads        = 12;
 static BOOL      bShowAxes      = false;
 static BOOL      bUseHSV        = true;
+static BOOL      bUseTTMath     = false;
+
 QuadDoubleStack* qds;
 WorkQueue*       wq;
 
@@ -346,6 +348,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			int    ThreadsTemp;
 			BOOL   bShowAxesTemp;
 			BOOL   bUseHSVTemp;
+			BOOL   bUseTTMathTemp;
 
 			// Prepare to call GetOpenFileName().
 			OPENFILENAME ofn;
@@ -391,6 +394,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (bReadOK) bReadOK = ReadFile(hFile, &ThreadsTemp,    sizeof(ThreadsTemp),    NULL, NULL);
 			if (bReadOK) bReadOK = ReadFile(hFile, &bShowAxesTemp,  sizeof(bShowAxesTemp),  NULL, NULL);
 			if (bReadOK) bReadOK = ReadFile(hFile, &bUseHSVTemp,    sizeof(bUseHSVTemp),    NULL, NULL);
+			if (bReadOK) bReadOK = ReadFile(hFile, &bUseTTMath,     sizeof(bUseTTMath),     NULL, NULL);
 
 			CloseHandle(hFile);
 			delete[] pszOpenFileName;
@@ -422,6 +426,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			Threads        = ThreadsTemp;
 			bShowAxes      = bShowAxesTemp;
 			bUseHSV        = bUseHSVTemp;
+			bUseTTMath     = bUseTTMathTemp;
 
 			// Repaint the image.
 			InvalidateRect(hWnd, NULL, true);
@@ -475,6 +480,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (bWriteOK) bWriteOK = WriteFile(hFile, &Threads,    sizeof(Threads),    NULL, NULL);
 			if (bWriteOK) bWriteOK = WriteFile(hFile, &bShowAxes,  sizeof(bShowAxes),  NULL, NULL);
 			if (bWriteOK) bWriteOK = WriteFile(hFile, &bUseHSV,    sizeof(bUseHSV),    NULL, NULL);
+			if (bWriteOK) bWriteOK = WriteFile(hFile, &bUseTTMath, sizeof(bUseTTMath), NULL, NULL);
 
 			// Case of some error.
 			if (!bWriteOK)
@@ -1136,8 +1142,9 @@ INT_PTR CALLBACK Parameters(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		SetDlgItemText(hDlg, IDC_ITERATIONS, iTos(Iterations));
 		SetDlgItemText(hDlg, IDC_SLICES,     iTos(Slices));
 		SetDlgItemText(hDlg, IDC_THREADS,    iTos(Threads));
-		CheckDlgButton(hDlg, IDC_SHOW_AXES,  bShowAxes ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(hDlg, IDC_USEHSV,     bUseHSV   ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg, IDC_SHOW_AXES,  bShowAxes  ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg, IDC_USEHSV,     bUseHSV    ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg, IDC_USETTMATH,  bUseTTMath ? BST_CHECKED : BST_UNCHECKED);
 
 		return (INT_PTR)TRUE;
 
@@ -1159,8 +1166,9 @@ INT_PTR CALLBACK Parameters(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			SetDlgItemText(hDlg, IDC_SLICES,     iTos(5000));
 			SetDlgItemText(hDlg, IDC_THREADS,    iTos(12));
 
-			CheckDlgButton(hDlg, IDC_SHOW_AXES, bShowAxes ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hDlg, IDC_USEHSV,    bUseHSV   ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hDlg, IDC_SHOW_AXES, bShowAxes  ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hDlg, IDC_USEHSV,    bUseHSV    ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hDlg, IDC_USETTMATH, bUseTTMath ? BST_CHECKED : BST_UNCHECKED);
 
 			SendMessage(hDlg, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(hDlg, IDOK), true);
 
