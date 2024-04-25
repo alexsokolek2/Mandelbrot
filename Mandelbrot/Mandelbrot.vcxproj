@@ -138,6 +138,19 @@
     <ClInclude Include="QuadDoubleStack.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="ttmath.h" />
+    <ClInclude Include="ttmathbig.h" />
+    <ClInclude Include="ttmathdec.h" />
+    <ClInclude Include="ttmathint.h" />
+    <ClInclude Include="ttmathmisc.h" />
+    <ClInclude Include="ttmathobjects.h" />
+    <ClInclude Include="ttmathparser.h" />
+    <ClInclude Include="ttmaththreads.h" />
+    <ClInclude Include="ttmathtypes.h" />
+    <ClInclude Include="ttmathuint.h" />
+    <ClInclude Include="ttmathuint_noasm.h" />
+    <ClInclude Include="ttmathuint_x86.h" />
+    <ClInclude Include="ttmathuint_x86_64.h" />
     <ClInclude Include="WorkQueue.h" />
   </ItemGroup>
   <ItemGroup>
