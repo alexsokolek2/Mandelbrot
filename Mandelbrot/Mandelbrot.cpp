@@ -65,6 +65,8 @@
 //
 // Version 1.0.0.5 - April 21, 2024 - Limited mouse capture range.
 //
+// Interim version - April 24, 2024 - TTMath Bignum library added.
+//
 
 #include "framework.h"
 #include "Mandelbrot.h"
@@ -73,6 +75,8 @@
 #include "QuadDoubleStack.h"
 #include "WorkQueue.h"
 #include "HSVtoRGB.h"
+
+#include "ttmath.h"
 
 #define MAX_LOADSTRING 100
 
@@ -1343,7 +1347,7 @@ DWORD WINAPI MandelbrotWorkerThread(LPVOID lpParam)
 
 		// Algorithm: https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set.
 
-		double x0, y0, x, y, x2, y2;
+		ttmath::Big<1,2> x0, y0, x, y, x2, y2;
 
 		int iteration, Iterations = P->Iterations;
 
