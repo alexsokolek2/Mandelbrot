@@ -1294,8 +1294,9 @@ INT_PTR CALLBACK Parameters(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			Slices = SlicesTemp;
 			Threads = ThreadsTemp;
 
-			bShowAxes = IsDlgButtonChecked(hDlg, IDC_SHOW_AXES) == BST_CHECKED ? true : false;
-			bUseHSV   = IsDlgButtonChecked(hDlg, IDC_USEHSV)    == BST_CHECKED ? true : false;
+			bShowAxes  = IsDlgButtonChecked(hDlg, IDC_SHOW_AXES) == BST_CHECKED ? true : false;
+			bUseHSV    = IsDlgButtonChecked(hDlg, IDC_USEHSV)    == BST_CHECKED ? true : false;
+			bUseTTMath = IsDlgButtonChecked(hDlg, IDC_USETTMATH) == BST_CHECKED ? true : false;
 
 			EndDialog(hDlg, LOWORD(wParam));
 			return (INT_PTR)TRUE;
