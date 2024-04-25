@@ -544,6 +544,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			int        yMaxPixel;
 			int        xMaxPixel;
 			int        Iterations;
+			BOOL       bUseTTMath;
 		} THREADPROCPARAMETERS, *PTHREADPROCPARAMETERS;
 
 		// Allocate per thread parameter and handle arrays.
@@ -589,6 +590,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			pThreadProcParameters[Thread]->yMaxPixel  = rect.bottom - tm.tmHeight; // Leave room for the status bar.
 			pThreadProcParameters[Thread]->xMaxPixel  = rect.right;
 			pThreadProcParameters[Thread]->Iterations = Iterations;
+			pThreadProcParameters[Thread]->bUseTTMath = true;
 
 			// Create and launch this thread, initially stalled waiting for the mutex.
 			phThreadArray[Thread] = CreateThread
