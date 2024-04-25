@@ -1339,6 +1339,7 @@ DWORD WINAPI MandelbrotWorkerThread(LPVOID lpParam)
 		int        yMaxPixel;
 		int        xMaxPixel;
 		int        Iterations;
+		int        MWords;
 	} THREADPROCPARAMETERS, *PTHREADPROCPARAMETERS;
 	PTHREADPROCPARAMETERS P;
 	P = (PTHREADPROCPARAMETERS)lpParam;
@@ -1355,7 +1356,7 @@ DWORD WINAPI MandelbrotWorkerThread(LPVOID lpParam)
 
 		// Algorithm: https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set.
 
-		ttmath::Big<1,2> x0, y0, x, y, x2, y2;
+		ttmath::Big<1,P->MWords> x0, y0, x, y, x2, y2;
 
 		int iteration, Iterations = P->Iterations;
 
