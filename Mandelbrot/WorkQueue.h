@@ -12,9 +12,11 @@ private:
 	} WorkItem;
 	WorkItem* _head;
 	WorkItem* _tail;
+	int       _Slices;
 public:
 	WorkQueue();
 	~WorkQueue();
 	void Enqueue(int StartPixel, int EndPixel);
 	BOOL Dequeue(int& StartPixel, int& EndPixel);
+	int getSlices() { return _Slices; }
 };

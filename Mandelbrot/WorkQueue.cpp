@@ -9,6 +9,7 @@ WorkQueue::WorkQueue()
 {
 	_head = NULL;
 	_tail = NULL;
+	_Slices = 0;
 }
 
 WorkQueue::~WorkQueue()
@@ -36,6 +37,7 @@ void WorkQueue::Enqueue(int StartPixel, int EndPixel)
 		temp->_last = NULL;
 		_head = temp;
 		_tail = temp;
+		++_Slices;
 		return;
 	}
 
@@ -44,6 +46,7 @@ void WorkQueue::Enqueue(int StartPixel, int EndPixel)
 	temp->_next = _head;
 	temp->_last = NULL;
 	_head = temp;
+	++_Slices;
 	return;
 }
 
@@ -63,6 +66,7 @@ BOOL WorkQueue::Dequeue(int& StartPixel, int& EndPixel)
 		_head = NULL;
 		_tail = NULL;
 		return true;
+		--_Slices;
 	}
 
 	// Delete the last work item.
@@ -70,5 +74,6 @@ BOOL WorkQueue::Dequeue(int& StartPixel, int& EndPixel)
 	_tail->_last->_next = NULL;
 	_tail = _tail->_last;
 	delete temp;
+	--_Slices;
 	return true;
 }
