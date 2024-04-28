@@ -101,6 +101,7 @@ static int       Threads        = 12;
 static BOOL      bShowAxes      = false;
 static BOOL      bUseHSV        = true;
 static BOOL      bUseTTMath     = false;
+HWND             hWndProgress;
 
 QuadDoubleStack* qds;
 WorkQueue*       wq;
@@ -116,6 +117,7 @@ TCHAR*              dTos(DOUBLE);
 TCHAR*              iTos(int);
 DWORD WINAPI        MandelbrotWorkerThread(LPVOID lpParam);
 uint32_t            ReverseRGBBytes(uint32_t);
+INT_PTR CALLBACK    MDBoxProc(HWND, UINT, WPARAM, LPARAM);
 
 
 
@@ -307,6 +309,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	static BOOL LeftMouseButtonDown = false;
 	static POINT MouseDragOrigin;
 	static POINT MouseDragDestination;
+	static HDC dc;
+	TCHAR szProgress[100];
 
 	// Persistent bitmap support variables.
 	static BITMAPINFOHEADER bmih = { 0 };
@@ -324,6 +328,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
+
+	case WM_INITDIALOG:
+		return true;
 
 	case WM_COMMAND:
 	{
@@ -543,6 +550,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Create the critical section mutex for the thread pool. (Initially owned by this thread.)
 		HANDLE hcsMutex = CreateMutex(NULL, TRUE, _T("{4671AE3A-10E9-469D-A726-9A0C1AD5300D}"));
 
+		// Setup to use the modeless dialog box to display progress.
+		dc = GetDC(hWndProgress);
+		RECT WindowRect;
+		GetWindowRect(hWnd, &WindowRect);
+		ShowWindow(hWndProgress, SW_SHOW);
+		SetWindowPos(hWndProgress, HWND_NOTOPMOST, WindowRect.left + 50, WindowRect.top + 50, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
+
 		// Parameters for each thread.
 		typedef struct ThreadProcParameters
 		{
@@ -620,13 +634,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Wait for all threads to terminate.
 		for (;;)
 		{
-			// Wait for up to one second.
-			if (WaitForMultipleObjects(Threads, phThreadArray, TRUE, 1000) == WAIT_OBJECT_0) break;
+			// Wait for up to ten milliseconds.
+			if (WaitForMultipleObjects(Threads, phThreadArray, TRUE, 10) == WAIT_OBJECT_0) break;
 			
+			//Update the user about progress.
+			int Slice = wq->getSlices();
+			int iPercent = (int)((Slices - Slice) * 100.f / Slices + 0.5f);
+			StringCchPrintf(szProgress, 100, _T("Slice: %d of %d (%%%d)"), Slices - Slice, Slices, iPercent);
+			dc = GetDC(hWndProgress);
+			SetBkColor(dc, RGB(240, 240, 240));
+			TextOut(dc, 16, 16, szProgress, lstrlen(szProgress));
+
 			// Flush the message queue.
 			MSG msg;
 			while (PeekMessage(&msg, hWnd, 0, 0, PM_REMOVE));
 		}
+		
+		ReleaseDC(hWndProgress, dc);
+		ShowWindow(hWndProgress, SW_HIDE);
 
 		// Delete the critical section mutex
 		CloseHandle(hcsMutex);
@@ -1064,10 +1089,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			pAppReg->SaveMemoryBlock(_T("WindowPlacement"), (LPBYTE)&wp, sizeof(wp));
 		delete pAppReg;
 
+		DestroyWindow(hWndProgress);
+
 		// Send the final message.
 		PostQuitMessage(0);
 		break;
 	}
+
+	case WM_CREATE:
+		// Create the modeless dialog box - We will display it later in the process procedure
+		hWndProgress = CreateDialog(hInst, MAKEINTRESOURCE(IDD_PROGRESS), hWnd, (DLGPROC)MDBoxProc);
+		if (hWndProgress == NULL)
+		{
+			MessageBeep(MB_ICONEXCLAMATION);
+			MessageBox(hWnd, _T("CreateDialog returned NULL"),
+				_T("Warning!"), MB_OK | MB_ICONEXCLAMATION);
+		}
+		break;
 
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
@@ -1314,6 +1352,25 @@ INT_PTR CALLBACK Parameters(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	}
 	}
 	return (INT_PTR)FALSE;
+}
+
+
+
+// Message handler for modeless dialog box.
+INT_PTR CALLBACK MDBoxProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	UNREFERENCED_PARAMETER(hDlg);
+	UNREFERENCED_PARAMETER(wParam);
+	UNREFERENCED_PARAMETER(lParam);
+
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		return true;
+	case WM_COMMAND:
+		return true;
+	}
+	return false;
 }
 
 
