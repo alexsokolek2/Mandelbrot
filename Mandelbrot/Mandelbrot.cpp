@@ -651,7 +651,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			dc = GetDC(hWndProgress);
 			SetBkColor(dc, RGB(240, 240, 240));
 			TextOut(dc, 16, 16, szProgress, lstrlen(szProgress));
-			TextOut(dc, 16, 40, _T("Press ESC to abort"), 18);
+			TextOut(dc, 16, 40, _T("Press ESC to abort"), 19);
 
 			// Flush the message queue while checking for abort request.
 			for (;;)
@@ -659,11 +659,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				MSG msg;
 				BOOL bMsg = PeekMessage(&msg, hWnd, 0, 0, PM_REMOVE);
 				if (!bMsg) break;
+				TCHAR sz[50];
+				StringCchPrintf(sz, 50, _T("%08x   %08x\n"), msg.message, msg.wParam);
+				OutputDebugString(sz);
 				if (msg.message == WM_KEYDOWN && msg.wParam == VK_ESCAPE)
 					bAbort = true;
 			}
 		}
-		
+	
 		ReleaseDC(hWndProgress, dc);
 		ShowWindow(hWndProgress, SW_HIDE);
 
