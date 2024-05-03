@@ -575,6 +575,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			int        xMaxPixel;
 			int        Iterations;
 			BOOL       bUseTTMath;
+			BOOL*      pbAbort;
 		} THREADPROCPARAMETERS, *PTHREADPROCPARAMETERS;
 
 		// Allocate per thread parameter and handle arrays.
@@ -590,6 +591,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		// Instantiate the WorkQueue class
 		wq = new WorkQueue;
+		BOOL bAbort = false;
 
 		// Create work items in the WorkQueue. Walk the start and end pixel indices.
 		for (StartPixel = 0, EndPixel = PixelStepSize, Slice = 0;
@@ -621,6 +623,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			pThreadProcParameters[Thread]->xMaxPixel  = rect.right;
 			pThreadProcParameters[Thread]->Iterations = Iterations;
 			pThreadProcParameters[Thread]->bUseTTMath = bUseTTMath;
+			pThreadProcParameters[Thread]->pbAbort    = &bAbort;
 
 			// Create and launch this thread, initially stalled waiting for the mutex.
 			phThreadArray[Thread] = CreateThread
@@ -641,17 +644,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			// Wait for up to fifty milliseconds.
 			if (WaitForMultipleObjects(Threads, phThreadArray, TRUE, 50) == WAIT_OBJECT_0) break;
 			
-			//Update the user about progress.
+			// Update the user about progress.
 			int Slice = wq->getSlices();
 			int iPercent = (int)((Slices - Slice) * 100.f / Slices + 0.5f);
-			StringCchPrintf(szProgress, 100, _T("Slice: %d of %d (%%%d)"), Slices - Slice, Slices, iPercent);
+			StringCchPrintf(szProgress, 100, _T("Slice: %d of %d (%d%%)"), Slices - Slice, Slices, iPercent);
 			dc = GetDC(hWndProgress);
 			SetBkColor(dc, RGB(240, 240, 240));
 			TextOut(dc, 16, 16, szProgress, lstrlen(szProgress));
+			TextOut(dc, 16, 40, _T("Press ESC to abort"), 18);
 
-			// Flush the message queue.
-			MSG msg;
-			while (PeekMessage(&msg, hWnd, 0, 0, PM_REMOVE));
+			// Flush the message queue while checking for abort request.
+			for (;;)
+			{
+				MSG msg;
+				BOOL bMsg = PeekMessage(&msg, hWnd, 0, 0, PM_REMOVE);
+				if (!bMsg) break;
+				if (msg.message == WM_KEYDOWN && msg.wParam == VK_ESCAPE)
+					bAbort = true;
+			}
 		}
 		
 		ReleaseDC(hWndProgress, dc);
@@ -1360,25 +1370,6 @@ INT_PTR CALLBACK Parameters(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 
 
 
-// Message handler for modeless dialog box.
-INT_PTR CALLBACK MDBoxProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(hDlg);
-	UNREFERENCED_PARAMETER(wParam);
-	UNREFERENCED_PARAMETER(lParam);
-
-	switch (message)
-	{
-	case WM_INITDIALOG:
-		return true;
-	case WM_COMMAND:
-		return true;
-	}
-	return false;
-}
-
-
-
 // Convert double to string. Helper for the parameters dialog box procedure.
 TCHAR* dTos(DOUBLE d)
 {
@@ -1396,6 +1387,25 @@ TCHAR* iTos(int i)
 	static TCHAR sz[20];
 	StringCchPrintf(sz, 20, _T("%d"), i);
 	return sz;
+}
+
+
+
+// Message handler for modeless dialog box.
+INT_PTR CALLBACK MDBoxProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	UNREFERENCED_PARAMETER(hDlg);
+	UNREFERENCED_PARAMETER(wParam);
+	UNREFERENCED_PARAMETER(lParam);
+
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		return true;
+	case WM_COMMAND:
+		return true;
+	}
+	return false;
 }
 
 
@@ -1418,6 +1428,7 @@ DWORD WINAPI MandelbrotWorkerThread(LPVOID lpParam)
 		int        xMaxPixel;
 		int        Iterations;
 		BOOL       bUseTTMath;
+		BOOL*      pbAbort;
 	} THREADPROCPARAMETERS, * PTHREADPROCPARAMETERS;
 	PTHREADPROCPARAMETERS P;
 	P = (PTHREADPROCPARAMETERS)lpParam;
@@ -1425,6 +1436,8 @@ DWORD WINAPI MandelbrotWorkerThread(LPVOID lpParam)
 	// Loop until no more work to do.
 	for (;;)
 	{
+		if (*(P->pbAbort)) return 0; // Case of user pressed ESCAPE
+
 		// Retrieve the Work Queue slice
 		int StartPixel, EndPixel;                               // Work slice.
 		WaitForSingleObject(P->hcsMutex, INFINITE);             // Enter Critical Section.
