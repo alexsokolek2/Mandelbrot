@@ -45,7 +45,8 @@ The number of slices is adjustable, as are the X and Y axes
 ranges. The user can choose to see the axes on the final plot.
 The max iterations can also be adjusted, at the cost of speed.
 
-Added modeless progress dialog box.
+Added modeless progress dialog box. Gave the user the ability
+to abort with ESCAPE.
 
 The user can save and restore the plot parameters to and from
 a file using standard File Save and File Open sequences.
@@ -74,3 +75,5 @@ Version 1.0.0.5 - April 21, 2024 - Limited mouse capture range.
 Version 1.0.0.6 - April 25, 2024 - Added support for TTMath library.
 
 Version 1.0.0.7 - April 28, 2024 - Added modeless progress dialog box.
+
+Version 1.0.0.8 - May 4, 2024 - Abort logic and wq dtor bug.
