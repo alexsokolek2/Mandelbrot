@@ -19,8 +19,10 @@ WorkQueue::~WorkQueue()
 		WorkItem* temp = _head->_next;
 		delete _head;
 		_head = temp;
-		_head->_last = NULL;
+		if (_head != NULL) _head->_last = NULL;
 	}
+	_tail = NULL;
+	_Slices = 0;
 }
 
 void WorkQueue::Enqueue(int StartPixel, int EndPixel)

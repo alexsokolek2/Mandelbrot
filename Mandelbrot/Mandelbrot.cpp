@@ -652,15 +652,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			TextOut(dc, 16, 16, szProgress, lstrlen(szProgress));
 			TextOut(dc, 16, 40, _T("Press ESC to abort"), 19);
 
-			// Flush the message queue and check for abort request.
+			// Flush one message from the queue and check for abort request.
 			MSG msg;
-			if (!PeekMessage(&msg, hWnd, 0, 0, PM_REMOVE)) continue; // Case of no message.
-			TCHAR sz[50];
-			StringCchPrintf(sz, 50, _T("%08x   %016x\n"), msg.message, msg.wParam);
-			OutputDebugString(sz);
+			if (!PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) continue; // Case of no message.
 			if (msg.message == WM_KEYDOWN && msg.wParam == VK_ESCAPE) bAbort = true;
 		}
-	
+
 		ReleaseDC(hWndProgress, dc);
 		ShowWindow(hWndProgress, SW_HIDE);
 
@@ -679,6 +676,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Delete the Work Queue class.
 		delete wq;
 
+		if (bAbort) break; // Case of user abort.
+		
 		// Refresh the image with the bitmap.
 		SetDIBitsToDevice(hdc, 0, 0, rect.right, rect.bottom - tm.tmHeight,
 			0, 0, 0, rect.bottom - tm.tmHeight, BitmapData, &dbmi, 0);
