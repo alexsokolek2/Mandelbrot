@@ -1,5 +1,5 @@
 @echo off
-path %path%;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.39.33519\bin\Hostx64\x64\
+path %path%;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.40.33807\bin\Hostx64\x64\
 echo Assembling for Release...
 ml64 /W3 /WX /Fottmathuint_x86_64_msvc_release.obj /c ttmathuint_x86_64_msvc.asm
 echo Assembling for Debug...
