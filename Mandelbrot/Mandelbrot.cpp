@@ -9,12 +9,6 @@
 // Also, saves and restores the WindowPlacement, in the registry,
 // between executions.
 //
-// The user has the option of selecting the old FPU logic, or the
-// new TTMath library from ttmath.org. This new library provides
-// extended precision floating point arithmetic (among other things)
-// and is used to see if the resolution of the graphics improves.
-// (It does not seem to improve things, but time will tell.)
-// 
 // Slices up the graphics workload between 12 threads. The machine
 // used for development and testing has 10 cores, and 12 logical
 // processors, hence the choice of 12 threads. We can specify a
@@ -80,6 +74,8 @@
 //
 // Version 1.0.0.8 - May 4, 2024 - Abort logic and wq dtor bug.
 //
+// Version 1.0.0.9 - May 28, 2024 - Deleted support for the TTMath library.
+//
 
 #include "framework.h"
 #include "Mandelbrot.h"
@@ -88,8 +84,6 @@
 #include "QuadDoubleStack.h"
 #include "WorkQueue.h"
 #include "HSVtoRGB.h"
-
-#include "ttmath.h"
 
 #define MAX_LOADSTRING 100
 
@@ -107,7 +101,6 @@ static int       Slices         = 5000;
 static int       Threads        = 12;
 static BOOL      bShowAxes      = false;
 static BOOL      bUseHSV        = true;
-static BOOL      bUseTTMath     = false;
 HWND             hWndProgress;
 
 QuadDoubleStack* qds;
@@ -368,7 +361,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			int    ThreadsTemp;
 			BOOL   bShowAxesTemp;
 			BOOL   bUseHSVTemp;
-			BOOL   bUseTTMathTemp;
 
 			// Prepare to call GetOpenFileName().
 			OPENFILENAME ofn;
@@ -414,7 +406,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (bReadOK) bReadOK = ReadFile(hFile, &ThreadsTemp,    sizeof(ThreadsTemp),    NULL, NULL);
 			if (bReadOK) bReadOK = ReadFile(hFile, &bShowAxesTemp,  sizeof(bShowAxesTemp),  NULL, NULL);
 			if (bReadOK) bReadOK = ReadFile(hFile, &bUseHSVTemp,    sizeof(bUseHSVTemp),    NULL, NULL);
-			if (bReadOK) bReadOK = ReadFile(hFile, &bUseTTMathTemp, sizeof(bUseTTMathTemp), NULL, NULL);
 
 			CloseHandle(hFile);
 			delete[] pszOpenFileName;
@@ -446,7 +437,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			Threads        = ThreadsTemp;
 			bShowAxes      = bShowAxesTemp;
 			bUseHSV        = bUseHSVTemp;
-			bUseTTMath     = bUseTTMathTemp;
 
 			// Repaint the image.
 			InvalidateRect(hWnd, NULL, true);
@@ -500,7 +490,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (bWriteOK) bWriteOK = WriteFile(hFile, &Threads,    sizeof(Threads),    NULL, NULL);
 			if (bWriteOK) bWriteOK = WriteFile(hFile, &bShowAxes,  sizeof(bShowAxes),  NULL, NULL);
 			if (bWriteOK) bWriteOK = WriteFile(hFile, &bUseHSV,    sizeof(bUseHSV),    NULL, NULL);
-			if (bWriteOK) bWriteOK = WriteFile(hFile, &bUseTTMath, sizeof(bUseTTMath), NULL, NULL);
 
 			// Case of some error.
 			if (!bWriteOK)
@@ -577,7 +566,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			int        yMaxPixel;
 			int        xMaxPixel;
 			int        Iterations;
-			BOOL       bUseTTMath;
 			BOOL*      pbAbort;
 		} THREADPROCPARAMETERS, *PTHREADPROCPARAMETERS;
 
@@ -625,7 +613,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			pThreadProcParameters[Thread]->yMaxPixel  = rect.bottom - tm.tmHeight; // Leave room for the status bar.
 			pThreadProcParameters[Thread]->xMaxPixel  = rect.right;
 			pThreadProcParameters[Thread]->Iterations = Iterations;
-			pThreadProcParameters[Thread]->bUseTTMath = bUseTTMath;
 			pThreadProcParameters[Thread]->pbAbort    = &bAbort;
 
 			// Create and launch this thread, initially stalled waiting for the mutex.
@@ -1201,7 +1188,6 @@ INT_PTR CALLBACK Parameters(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		SetDlgItemText(hDlg, IDC_THREADS,    iTos(Threads));
 		CheckDlgButton(hDlg, IDC_SHOW_AXES,  bShowAxes  ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_USEHSV,     bUseHSV    ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(hDlg, IDC_USETTMATH,  bUseTTMath ? BST_CHECKED : BST_UNCHECKED);
 
 		return (INT_PTR)TRUE;
 
@@ -1225,7 +1211,6 @@ INT_PTR CALLBACK Parameters(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 
 			CheckDlgButton(hDlg, IDC_SHOW_AXES, false);
 			CheckDlgButton(hDlg, IDC_USEHSV,    true );
-			CheckDlgButton(hDlg, IDC_USETTMATH, false);
 
 			SendMessage(hDlg, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(hDlg, IDOK), true);
 
@@ -1353,7 +1338,6 @@ INT_PTR CALLBACK Parameters(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 
 			bShowAxes  = IsDlgButtonChecked(hDlg, IDC_SHOW_AXES) == BST_CHECKED ? true : false;
 			bUseHSV    = IsDlgButtonChecked(hDlg, IDC_USEHSV)    == BST_CHECKED ? true : false;
-			bUseTTMath = IsDlgButtonChecked(hDlg, IDC_USETTMATH) == BST_CHECKED ? true : false;
 
 			EndDialog(hDlg, LOWORD(wParam));
 			return (INT_PTR)TRUE;
@@ -1426,7 +1410,6 @@ DWORD WINAPI MandelbrotWorkerThread(LPVOID lpParam)
 		int        yMaxPixel;
 		int        xMaxPixel;
 		int        Iterations;
-		BOOL       bUseTTMath;
 		BOOL*      pbAbort;
 	} THREADPROCPARAMETERS, * PTHREADPROCPARAMETERS;
 	PTHREADPROCPARAMETERS P;
@@ -1446,139 +1429,70 @@ DWORD WINAPI MandelbrotWorkerThread(LPVOID lpParam)
 
 		// Algorithm: https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set.
 
-		double             x0,  y0,  x,  y,  x2,  y2; // for the old FPU logic.
-		ttmath::Big<1, 4> xx0, yy0, xx, yy, xx2, yy2; // for the new TTMath library.
+		double x0, y0, x, y, x2,  y2;
 
 		int iteration, Iterations = P->Iterations;
 
-		if (!P->bUseTTMath) // Case of using the old FPU logic.
+		// Loop for each pixel in the slice.
+		for (int Pixel = StartPixel; Pixel < EndPixel; ++Pixel)
 		{
-			// Loop for each pixel in the slice.
-			for (int Pixel = StartPixel; Pixel < EndPixel; ++Pixel)
+			// Calculate the x and y coordinates of the pixel.
+			int xPixel = Pixel % P->xMaxPixel;
+			int yPixel = Pixel / P->xMaxPixel;
+
+			// Calculate the real and imaginary coordinates of the point.
+			x0 = (P->dxMax - P->dxMin) / P->xMaxPixel * xPixel + P->dxMin;
+			y0 = (P->dyMax - P->dyMin) / P->yMaxPixel * yPixel + P->dyMin;
+
+			// Initial values.
+			x = 0.0;
+			y = 0.0;
+			x2 = 0.0;
+			y2 = 0.0;
+			iteration = 0;
+
+			// Main Mandelbrot algorithm. Determine the number of iterations
+			// that it takes each point to escape the distance of 2. The black
+			// areas of the image represent the points that never escape. This
+			// algorithm is described as the Optimized Escape Time algorithm
+			// in the WikiPedia article noted above.
+
+			while (x2 + y2 <= 4.0 && iteration < Iterations)
 			{
-				// Calculate the x and y coordinates of the pixel.
-				int xPixel = Pixel % P->xMaxPixel;
-				int yPixel = Pixel / P->xMaxPixel;
-
-				// Calculate the real and imaginary coordinates of the point.
-				x0 = (P->dxMax - P->dxMin) / P->xMaxPixel * xPixel + P->dxMin;
-				y0 = (P->dyMax - P->dyMin) / P->yMaxPixel * yPixel + P->dyMin;
-
-				// Initial values.
-				x = 0.0;
-				y = 0.0;
-				x2 = 0.0;
-				y2 = 0.0;
-				iteration = 0;
-
-				// Main Mandelbrot algorithm. Determine the number of iterations
-				// that it takes each point to escape the distance of 2. The black
-				// areas of the image represent the points that never escape. This
-				// algorithm is described as the Optimized Escape Time algorithm
-				// in the WikiPedia article noted above.
-
-				while (x2 + y2 <= 4.0 && iteration < Iterations)
-				{
-					y = (x + x) * y + y0;
-					x = x2 - y2 + x0;
-					x2 = x * x;
-					y2 = y * y;
-					++iteration;
-				}
-
-				// When we get here, we have a pixel and an iteration count.
-				// Lookup the color in the spectrum of all colors and set the
-				// pixel to that color. Note that we are only ever using 1000
-				// of the 16777216 possible colors. Changing Iterations uses
-				// a different pallette, but 1000 seems to be the best choice.
-				// Note also that this bitmap is shared by all the threads, but
-				// there is no concurrency conflict as each thread is assigned
-				// a different region of the bitmap. The user has the option of
-				// using the original RGB system or the new triple-Log HSV system.
-
-				if (bUseHSV)
-				{
-					// The new HSV system.
-					sRGB rgb;
-					sHSV hsv;
-					hsv = mandelbrotHSV(iteration, Iterations);
-					rgb = hsv2rgb(hsv);
-					P->BitmapData[Pixel] =
-						(((int)(rgb.r * 255 + 0.5))      ) +
-						(((int)(rgb.g * 255 + 0.5)) <<  8) +
-						(((int)(rgb.b * 255 + 0.5)) << 16);
-				}
-				else
-				{
-					// The old RGB system.
-					P->BitmapData[Pixel] = ReverseRGBBytes
-					((COLORREF)(-16777216.0 / Iterations * iteration + 16777216.0));
-				}
+				y = (x + x) * y + y0;
+				x = x2 - y2 + x0;
+				x2 = x * x;
+				y2 = y * y;
+				++iteration;
 			}
-		}
-		else // Case of using the new TTMath library
-		{
-			// Loop for each pixel in the slice.
-			for (int Pixel = StartPixel; Pixel < EndPixel; ++Pixel)
+
+			// When we get here, we have a pixel and an iteration count.
+			// Lookup the color in the spectrum of all colors and set the
+			// pixel to that color. Note that we are only ever using 1000
+			// of the 16777216 possible colors. Changing Iterations uses
+			// a different pallette, but 1000 seems to be the best choice.
+			// Note also that this bitmap is shared by all the threads, but
+			// there is no concurrency conflict as each thread is assigned
+			// a different region of the bitmap. The user has the option of
+			// using the original RGB system or the new triple-Log HSV system.
+
+			if (bUseHSV)
 			{
-				// Calculate the x and y coordinates of the pixel.
-				int xPixel = Pixel % P->xMaxPixel;
-				int yPixel = Pixel / P->xMaxPixel;
-
-				// Calculate the real and imaginary coordinates of the point.
-				xx0 = (P->dxMax - P->dxMin) / P->xMaxPixel * xPixel + P->dxMin;
-				yy0 = (P->dyMax - P->dyMin) / P->yMaxPixel * yPixel + P->dyMin;
-
-				// Initial values.
-				xx = 0.0;
-				yy = 0.0;
-				xx2 = 0.0;
-				yy2 = 0.0;
-				iteration = 0;
-
-				// Main Mandelbrot algorithm. Determine the number of iterations
-				// that it takes each point to escape the distance of 2. The black
-				// areas of the image represent the points that never escape. This
-				// algorithm is described as the Optimized Escape Time algorithm
-				// in the WikiPedia article noted above.
-
-				while (xx2 + yy2 <= 4.0 && iteration < Iterations)
-				{
-					yy = (xx + xx) * yy + yy0;
-					xx = xx2 - yy2 + xx0;
-					xx2 = xx * xx;
-					yy2 = yy * yy;
-					++iteration;
-				}
-
-				// When we get here, we have a pixel and an iteration count.
-				// Lookup the color in the spectrum of all colors and set the
-				// pixel to that color. Note that we are only ever using 1000
-				// of the 16777216 possible colors. Changing Iterations uses
-				// a different pallette, but 1000 seems to be the best choice.
-				// Note also that this bitmap is shared by all the threads, but
-				// there is no concurrency conflict as each thread is assigned
-				// a different region of the bitmap. The user has the option of
-				// using the original RGB system or the new triple-Log HSV system.
-
-				if (bUseHSV)
-				{
-					// The new HSV system.
-					sRGB rgb;
-					sHSV hsv;
-					hsv = mandelbrotHSV(iteration, Iterations);
-					rgb = hsv2rgb(hsv);
-					P->BitmapData[Pixel] =
-						(((int)(rgb.r * 255 + 0.5))      ) +
-						(((int)(rgb.g * 255 + 0.5)) <<  8) +
-						(((int)(rgb.b * 255 + 0.5)) << 16);
-				}
-				else
-				{
-					// The old RGB system.
-					P->BitmapData[Pixel] = ReverseRGBBytes
-					((COLORREF)(-16777216.0 / Iterations * iteration + 16777216.0));
-				}
+				// The new HSV system.
+				sRGB rgb;
+				sHSV hsv;
+				hsv = mandelbrotHSV(iteration, Iterations);
+				rgb = hsv2rgb(hsv);
+				P->BitmapData[Pixel] =
+					(((int)(rgb.r * 255 + 0.5))      ) +
+					(((int)(rgb.g * 255 + 0.5)) <<  8) +
+					(((int)(rgb.b * 255 + 0.5)) << 16);
+			}
+			else
+			{
+				// The old RGB system.
+				P->BitmapData[Pixel] = ReverseRGBBytes
+				((COLORREF)(-16777216.0 / Iterations * iteration + 16777216.0));
 			}
 		}
 	}
